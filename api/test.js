@@ -1,6 +1,5 @@
 // api/test.js
 export default async function handler(req, res) {
-  // 1. 環境変数の取得
   const tenantId = process.env.AZURE_TENANT_ID;
   const clientId = process.env.AZURE_CLIENT_ID;
   const vaultUrl = process.env.AZURE_KEYVAULT_URL;
@@ -11,7 +10,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 2. Azureアクセストークン取得 (OIDC Federation)
+    // 1. Azureアクセストークン取得
     const azureAuthRes = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -23,16 +22,19 @@ export default async function handler(req, res) {
         scope: 'https://vault.azure.net/.default'
       })
     });
-    const { access_token } = await azureAuthRes.json();
+    const authData = await azureAuthRes.json();
+    if (!azureAuthRes.ok) return res.status(500).json({ status: "Azure Auth Error", details: authData });
 
-    // 3. Key VaultからClaudeのAPIキーを取得
+    // 2. Key VaultからAPIキーを取得
     const kvRes = await fetch(`${vaultUrl}/secrets/avant-csc-claude-api-key?api-version=7.4`, {
-      headers: { 'Authorization': `Bearer ${access_token}` }
+      headers: { 'Authorization': `Bearer ${authData.access_token}` }
     });
     const kvData = await kvRes.json();
-    const claudeApiKey = kvData.value; // シークレットの「値」
+    if (!kvRes.ok) return res.status(500).json({ status: "Key Vault Error", details: kvData });
+    
+    const claudeApiKey = kvData.value;
 
-    // 4. Claude API (Anthropic) を実行
+    // 3. Claude API (Anthropic) を実行
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -49,7 +51,15 @@ export default async function handler(req, res) {
 
     const claudeData = await anthropicRes.json();
 
-    // 5. 結果をフロントエンドに返す
+    // 【重要】Anthropic側でエラーが発生していないかチェック
+    if (!anthropicRes.ok) {
+      return res.status(anthropicRes.status).json({
+        status: "Claude API Error",
+        details: claudeData // ここに Anthropic からの具体的なエラー理由が入ります
+      });
+    }
+
+    // 正常系：回答を返す
     res.status(200).json({
       status: "Success",
       reply: claudeData.content[0].text
