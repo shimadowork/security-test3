@@ -45,8 +45,12 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "claude-opus-4-1",
         max_tokens: 1024,
-        messages: [{ role: "user", content: "Hello, Claude! Please respond with a short greeting." }]
-      })
+        system: "あなたはITインフラの専門家です。簡潔に回答してください。", // システムプロンプト
+        messages: [{ 
+          role: "user", 
+          content: "OIDC連携のメリットを教えて。" 
+  }]
+})
     });
 
     const claudeData = await anthropicRes.json();
