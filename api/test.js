@@ -45,7 +45,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "claude-opus-4-1",
         max_tokens: 1024,
-        system: "あなたはITインフラの専門家です。簡潔に回答してください。", // システムプロンプト
+        system: "あなたはITインフラの専門家です。簡潔に回答してください。",
         messages: [{ 
           role: "user", 
           content: "OIDC連携のメリットを教えて。" 
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
     const claudeData = await anthropicRes.json();
 
-    // 【重要】Anthropic側でエラーが発生していないかチェック
+    // Anthropic側でエラーが発生していないかチェック
     if (!anthropicRes.ok) {
       return res.status(anthropicRes.status).json({
         status: "Claude API Error",
