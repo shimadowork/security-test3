@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude API Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        #result { background: #f4f4f4; padding: 15px; border-radius: 5px; margin-top: 10px; white-space: pre-wrap; }
+        button { padding: 10px 20px; cursor: pointer; background: #0070f3; color: white; border: none; border-radius: 5px; }
+        button:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Claude API Test (via Azure Key Vault)</h1>
+    <p>下のボタンを押すと、バックエンド経由でClaudeにメッセージを送信します。</p>
+    
+    <button id="sendBtn">Claudeに挨拶する</button>
+
+    <h3>実行結果:</h3>
+    <div id="result">ここに回答が表示されます</div>
+
+    <script>
+        const btn = document.getElementById('sendBtn');
+        const resultDiv = document.getElementById('result');
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            resultDiv.innerText = "通信中...";
+
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+
+                if (data.status === "Success") {
+                    resultDiv.innerText = data.reply;
+                } else {
+                    resultDiv.innerText = "エラーが発生しました:\n" + JSON.stringify(data, null, 2);
+                }
+            } catch (err) {
+                resultDiv.innerText = "通信エラー: " + err.message;
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
