@@ -3,6 +3,7 @@ export default async function handler(req, res) {
   const tenantId = process.env.AZURE_TENANT_ID;
   const clientId = process.env.AZURE_CLIENT_ID;
   const vaultUrl = process.env.AZURE_KEYVAULT_URL;
+  const secretName = process.env.AZURE_SECRET_NAME;
   const vercelOidcToken = req.headers['x-vercel-oidc-token'];
 
   if (!vercelOidcToken) {
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
     if (!azureAuthRes.ok) return res.status(500).json({ status: "Azure Auth Error", details: authData });
 
     // 2. Key VaultからAPIキーを取得
-    const kvRes = await fetch(`${vaultUrl}/secrets/avant-csc-claude-api-key?api-version=7.4`, {
+    const kvRes = await fetch(`${vaultUrl}/secrets/${secretName}?api-version=7.4`, {
       headers: { 'Authorization': `Bearer ${authData.access_token}` }
     });
     const kvData = await kvRes.json();
@@ -59,7 +60,7 @@ export default async function handler(req, res) {
     if (!anthropicRes.ok) {
       return res.status(anthropicRes.status).json({
         status: "Claude API Error",
-        details: claudeData // ここに Anthropic からの具体的なエラー理由が入ります
+        details: claudeData // Anthropic からの具体的なエラー理由
       });
     }
 
